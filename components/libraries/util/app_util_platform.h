@@ -77,7 +77,7 @@ void critical_region_exit (void);
             }                                                                               \
         }        
 #else
-#define CRITICAL_REGION_ENTER() critical_region_enter()
+#define CRITICAL_REGION_ENTER() //critical_region_enter()
 #endif
 
 /**@brief Macro for leaving a critical region.
@@ -100,7 +100,7 @@ void critical_region_exit (void);
         }                                                                                   \
     }
 #else
-#define CRITICAL_REGION_EXIT() critical_region_exit()
+#define CRITICAL_REGION_EXIT() //critical_region_exit()
 #endif 
        
 /**@brief Function for finding the current interrupt level.

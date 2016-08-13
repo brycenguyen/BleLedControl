@@ -60,11 +60,27 @@
         .period_us       = period_in_us                                                \
     }
 
+#define APP_PWM_DEFAULT_CONFIG_1CH_RGB(period_in_us, pin)                                  \
+    {                                                                                  \
+        .pins            = {pin, APP_PWM_NOPIN},                                       \
+        .pin_polarity    = {APP_PWM_POLARITY_ACTIVE_HIGH, APP_PWM_POLARITY_ACTIVE_HIGH}, \
+        .num_of_channels = 1,                                                          \
+        .period_us       = period_in_us                                                \
+    }
+		
 /**@brief PWM instance default configuration (2 channels). */
 #define APP_PWM_DEFAULT_CONFIG_2CH(period_in_us, pin0, pin1)                           \
     {                                                                                  \
         .pins            = {pin0, pin1},                                               \
         .pin_polarity    = {APP_PWM_POLARITY_ACTIVE_LOW, APP_PWM_POLARITY_ACTIVE_LOW}, \
+        .num_of_channels = 2,                                                          \
+        .period_us       = period_in_us                                                \
+    }
+		
+#define APP_PWM_DEFAULT_CONFIG_2CH_RGB(period_in_us, pin0, pin1)                           \
+    {                                                                                  \
+        .pins            = {pin0, pin1},                                               \
+        .pin_polarity    = {APP_PWM_POLARITY_ACTIVE_HIGH, APP_PWM_POLARITY_ACTIVE_HIGH}, \
         .num_of_channels = 2,                                                          \
         .period_us       = period_in_us                                                \
     }

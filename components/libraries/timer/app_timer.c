@@ -339,9 +339,17 @@ static void timer_timeouts_check_sched(void)
 
 /**@brief Function for scheduling a timer list update by generating a SWI0 interrupt.
  */
+/*
 static void timer_list_handler_sched(void)
 {
     NVIC_SetPendingIRQ(SWI0_IRQn);
+}
+*/
+
+/*--khai-- :*/
+static void timer_list_handler_sched(void)
+{
+    NVIC_SetPendingIRQ(SWI1_IRQn);
 }
 
 
@@ -930,10 +938,20 @@ void RTC1_IRQHandler(void)
  *
  * @details Performs all updates to the timer list.
  */
+
+/*
 void SWI0_IRQHandler(void)
 {
     timer_list_handler();
 }
+*/
+
+/*--khai-- : tem*/
+void SWI1_IRQHandler(void)
+{
+    timer_list_handler();
+}
+
 
 
 uint32_t app_timer_init(uint32_t                      prescaler,
@@ -998,10 +1016,18 @@ uint32_t app_timer_init(uint32_t                      prescaler,
     m_ticks_elapsed_q_read_ind  = 0;
     m_ticks_elapsed_q_write_ind = 0;
 
+		/*
     NVIC_ClearPendingIRQ(SWI0_IRQn);
     NVIC_SetPriority(SWI0_IRQn, SWI0_IRQ_PRI);
     NVIC_EnableIRQ(SWI0_IRQn);
-
+		*/
+		
+		
+		/*--khai-- : temporarily use SWI1 for app_timer so that conflict with event_handler won't occur*/
+    NVIC_ClearPendingIRQ(SWI1_IRQn);
+    NVIC_SetPriority(SWI1_IRQn, SWI0_IRQ_PRI);
+    NVIC_EnableIRQ(SWI1_IRQn);
+		
     rtc1_init(prescaler);
 
     m_ticks_latest = rtc1_counter_get();
@@ -1072,7 +1098,7 @@ static timer_user_id_t user_id_get(void)
             ret = THREAD_MODE_USER_ID;
             break;
     }
-    
+    ret = APP_LOW_USER_ID;
     return ret;
 }
 
