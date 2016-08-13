@@ -74,6 +74,11 @@ __IO uint8_t rgb_pattern_updated = 0;
 /* struct ---------------------------------------------------T--------*/
 
 /* Static funcion ---------------------------------------------------T--------*/
+//huy
+uint8_t RxComplete=false;
+uint8_t LedBuffer[20];
+
+void LedRGB_CMD_Process(uint8_t* data, uint8_t len);
 void Input_Cyclic_Process( void );
 #ifdef HAS_TOUCH_SENSOR
 static void timer_init(void);
@@ -168,6 +173,10 @@ void rbc_mesh_event_handler(rbc_mesh_event_t* evt)
 						#ifdef HAS_HORN_LAMP
 						Horn_Lamp_CMD_Process(&evt->data[0], evt->data_len);
 						#endif
+						
+						//huy:process RGB data received
+						LedRGB_CMD_Process(&evt->data[0], evt->data_len);
+						
             nrf_gpio_pin_toggle(LED_3);
             break;
         case RBC_MESH_EVENT_TYPE_INITIALIZED:
@@ -430,4 +439,24 @@ void Input_Cyclic_Process( void )
 		#endif
 	}
 	Old_status = Loc_var;
+}
+
+void LedRGB_CMD_Process(uint8_t* data, uint8_t len)
+{
+	uint8_t i=0;
+	static uint8_t RxLen=0;
+	for(i=0;i<len;i++)
+	{
+		LedBuffer[RxLen+i]=*(data++);		
+	}
+	RxLen+=len;
+	if(RxLen>=LedBuffer[1]) //receive all the bytes
+	{
+			RxLen=0;//reset counting bytes received
+			RxComplete=1; //set flag to indicate pattern received
+	}		
+	else
+	{
+			
+	}
 }
