@@ -57,6 +57,11 @@ void BSP_Init_PWM(unsigned int ms)
 	
 		app_pwm_config_t pwm2_cfg = APP_PWM_DEFAULT_CONFIG_1CH_RGB(ms*1000,PIN_B);	
 		app_pwm_init(&PWM2,&pwm2_cfg,pwm_ready_callback_2); 
+
+	 	app_pwm_channel_duty_set(&PWM1,0,0);
+		app_pwm_channel_duty_set(&PWM1,1,0);					   
+		app_pwm_channel_duty_set(&PWM2,0,0);		
+	
 	
 		app_pwm_enable(&PWM1);
 		app_pwm_enable(&PWM2);
@@ -66,7 +71,6 @@ void BSP_Init_PWM(unsigned int ms)
 /*Set duty cycle for individual led.*/
 void BSP_Set_Led_Brightness(RGB_LED led, unsigned char brightness)
 {
-    
     switch(led)
     {
         case RGB_LED_RED :   
@@ -86,8 +90,8 @@ void BSP_Set_Led_Brightness(RGB_LED led, unsigned char brightness)
 /*This is just temporary to adapt with test system.
 This is going to be replaced when deployed in a specified system
 */
-unsigned int  g_rgbTime = 0;
-unsigned int  g_rgbRunning = 0;
+volatile unsigned int  g_rgbTime = 0;
+volatile unsigned int  g_rgbRunning = 0;
 
 unsigned char BSP_Is_RGB_Running()
 {

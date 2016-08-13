@@ -61,7 +61,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "hal_rgb.h"
 #include "rgb_config.h"
-__IO uint8_t rgb_pattern_updated = 0;
 
 #endif
 
@@ -75,7 +74,7 @@ __IO uint8_t rgb_pattern_updated = 0;
 
 /* Static funcion ---------------------------------------------------T--------*/
 //huy
-uint8_t RxComplete=false;
+uint8_t RxComplete = 0;
 uint8_t LedBuffer[20];
 
 void LedRGB_CMD_Process(uint8_t* data, uint8_t len);
@@ -177,7 +176,7 @@ void rbc_mesh_event_handler(rbc_mesh_event_t* evt)
 						//huy:process RGB data received
 						LedRGB_CMD_Process(&evt->data[0], evt->data_len);
 						
-            nrf_gpio_pin_toggle(LED_3);
+            //nrf_gpio_pin_toggle(LED_3);
             break;
         case RBC_MESH_EVENT_TYPE_INITIALIZED:
             /* init BLE gateway softdevice application: */
@@ -228,7 +227,7 @@ void gpio_init(void)
 } 
 /** @brief main function */
 
-int main(void){
+int main_rgb(void){
 		unsigned char m_default_pattern[] = 
 		{
 		'S', //Start
@@ -236,9 +235,9 @@ int main(void){
 		RGB_SPEED_FAST,   //Speed
 		RGB_MODE_FLASH,   //mode   
 		255,0,0,
-		255,255,0,
-		0,0,255,
 		0,255,0,
+		0,255,255,
+		0,0,255,
 		};
 		
 		HAL_RGB_Init();
@@ -247,12 +246,10 @@ int main(void){
 		//HAL_RGB_Run_Node(node);
 		while(true)
 		{
-			
-			HAL_RGB_Setup_Pattern(m_default_pattern);
 			HAL_RGB_Run_Pattern();
 		}
 }
-int main1(void)
+int main(void)
 {   
     //uint8_t  start_string[] = START_STRING;
     
@@ -264,6 +261,9 @@ int main1(void)
     /* Enable Softdevice (including sd_ble before framework */
     SOFTDEVICE_HANDLER_INIT(NRF_CLOCK_LFCLKSRC_XTAL_75_PPM, sd_evt_handler);
 	
+		#ifdef HAS_RGB
+		HAL_RGB_Init();
+		#endif
 	
     #ifdef HAS_UART
 		uart_init();
@@ -352,9 +352,17 @@ int main1(void)
             rbc_mesh_value_set(2, mesh_data, 1);
             led_config(2, 1);
         }
+				
+				if(RxComplete)
+				{
+						HAL_RGB_Setup_Pattern(LedBuffer);
+						RxComplete = 0;
+				}
+				HAL_RGB_Run_Pattern();
     }   
 #endif 
-			
+		
+		
 
 }
 

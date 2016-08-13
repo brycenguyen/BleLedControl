@@ -28,7 +28,7 @@ static volatile int s_curStep            = 0;
 static volatile int s_timeEachTransitionStep       = 0;
 static volatile int s_timeToHold         = 0;
 static unsigned char s_NumStepForTransition     = 10;
-static unsigned char s_finish_node = 1;
+static volatile unsigned char s_finish_node = 1;
 
 RGB_NODE pattern_single_arr[]=
 {
@@ -78,9 +78,9 @@ unsigned int rgb_single_speed_arr[][3] =
 unsigned int rgb_dimming_speed_arr[][3] = 
 {
     //time_to_hold, time_to_transition
-    {5000,          100,},
-    {3000,          100,},
-    {1000,          100,},
+    {5000,          200,},
+    {3000,          200,},
+    {200,           100,},
 
 };
 unsigned int rgb_continuous_speed_arr[][3] = 
@@ -170,13 +170,15 @@ void HAL_RGB_Callback()
 		/*Finish time_to_transition, turn to time_to_hold*/
     if(s_curStep == 0)
 		{
-				if(s_timeToHold)
+				if(s_timeToHold >= TIME_BASE_MS)
 				{
-					s_timeToHold = 0;
- 					BSP_Set_Time_ToUpdate(s_timeToHold);				
+					
+ 					BSP_Set_Time_ToUpdate(TIME_BASE_MS);				
 					BSP_Set_Led_Brightness(RGB_LED_RED,s_curRGBNode.red);
 					BSP_Set_Led_Brightness(RGB_LED_GREEN,s_curRGBNode.green);
 					BSP_Set_Led_Brightness(RGB_LED_BLUE,s_curRGBNode.blue);
+					s_timeToHold = s_timeToHold - TIME_BASE_MS;
+					//s_timeToHold = 0;
 				}
 				else
 					s_finish_node = 1;
@@ -224,11 +226,22 @@ void HAL_RGB_Init()
 		BSP_Init_Timer(rgb_app_timer_event_callback);
     
 }
+BOOL hal_null_node(RGB_NODE* pNode){
+		if((pNode->blue == 0) &&
+			 (pNode->green == 0) &&
+		   (pNode->red == 0) &&
+			 (pNode->time_to_hold == 0) &&
+			 (pNode->time_to_transition == 0))
+			return TRUE;
+		else
+			return FALSE;
+}
 void HAL_RGB_Run_Node(RGB_NODE node)
 {
     int timeEachStep = 0;
     int minTime = 0;
 
+		if(hal_null_node(&node)) return;
     if(hal_is_the_same_node(node)== TRUE) return;
     
     //set next node
