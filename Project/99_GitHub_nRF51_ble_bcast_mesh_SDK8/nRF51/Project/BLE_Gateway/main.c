@@ -35,6 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //#define HAS_HORN_LAMP
 //#define HAS_TOUCH_SENSOR
 #define HAS_UART
+#define HAS_RGB
 
 #include "rbc_mesh.h"
 #include "nrf_adv_conn.h"
@@ -55,6 +56,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "UART_Host.h"
 #endif
 #include "Relay_Control.h"
+
+#ifdef HAS_RGB
+
+#include "hal_rgb.h"
+#include "rgb_config.h"
+__IO uint8_t rgb_pattern_updated = 0;
+
+#endif
+
+//#include "nrf_delay.h"
 
 /* definition ---------------------------------------------------T--------*/
 
@@ -164,7 +175,12 @@ void rbc_mesh_event_handler(rbc_mesh_event_t* evt)
             nrf_adv_conn_init();
             break;  
     }
-}
+		
+		/*--khai-- :Put code to setup new RGB Pattern*/
+//		unsigned char* pPattern;
+//		HAL_RGB_Setup_Pattern(pPattern);
+			
+}	
 
 
 /**
@@ -200,11 +216,34 @@ void gpio_init(void)
     #endif
 #endif
     
-}
-
-
+} 
 /** @brief main function */
-int main(void)
+
+int main(void){
+		unsigned char m_default_pattern[] = 
+		{
+		'S', //Start
+		16,  //len
+		RGB_SPEED_FAST,   //Speed
+		RGB_MODE_FLASH,   //mode   
+		255,0,0,
+		255,255,0,
+		0,0,255,
+		0,255,0,
+		};
+		
+		HAL_RGB_Init();
+		HAL_RGB_Setup_Pattern(m_default_pattern);
+		RGB_NODE node = {255,0,0,1000,2000};
+		//HAL_RGB_Run_Node(node);
+		while(true)
+		{
+			
+			HAL_RGB_Setup_Pattern(m_default_pattern);
+			HAL_RGB_Run_Pattern();
+		}
+}
+int main1(void)
 {   
     //uint8_t  start_string[] = START_STRING;
     
@@ -215,6 +254,7 @@ int main(void)
     gpio_init();
     /* Enable Softdevice (including sd_ble before framework */
     SOFTDEVICE_HANDLER_INIT(NRF_CLOCK_LFCLKSRC_XTAL_75_PPM, sd_evt_handler);
+	
 	
     #ifdef HAS_UART
 		uart_init();
@@ -304,7 +344,8 @@ int main(void)
             led_config(2, 1);
         }
     }   
-#endif    
+#endif 
+			
 
 }
 
