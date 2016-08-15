@@ -227,17 +227,17 @@ void gpio_init(void)
 } 
 /** @brief main function */
 
-int main_rgb(void){
+int main(void){
 		unsigned char m_default_pattern[] = 
 		{
 		'S', //Start
-		16,  //len
+		'1','F',  //len
 		RGB_SPEED_FAST,   //Speed
 		RGB_MODE_FLASH,   //mode   
-		255,0,0,
-		0,255,0,
-		0,255,255,
-		0,0,255,
+		'F','F','0','0','0','0',
+		'0','0','F','F','0','0',
+		'0','0','F','F','F','F',
+		'0','0','0','0','F','F',
 		};
 		
 		HAL_RGB_Init();
@@ -249,7 +249,7 @@ int main_rgb(void){
 			HAL_RGB_Run_Pattern();
 		}
 }
-int main(void)
+int main_1(void)
 {   
     //uint8_t  start_string[] = START_STRING;
     

@@ -7,13 +7,13 @@ typedef struct {
 
 }RGB_NODE;
 
-#define RGB_SPEED_SLOW      0
-#define RGB_SPEED_MEDIUM    1
-#define RGB_SPEED_FAST      2
+#define RGB_SPEED_SLOW      '0','0'
+#define RGB_SPEED_MEDIUM    '0','1'
+#define RGB_SPEED_FAST      '0','2'
 
-#define RGB_MODE_SINGLE     0
-#define RGB_MODE_FLASH      1
-#define RGB_MODE_CONTINUOUS 2
+#define RGB_MODE_SINGLE     '0','0'
+#define RGB_MODE_FLASH      '0','1'
+#define RGB_MODE_CONTINUOUS '0','2'
 
 
 void HAL_RGB_Run_Node(RGB_NODE node);

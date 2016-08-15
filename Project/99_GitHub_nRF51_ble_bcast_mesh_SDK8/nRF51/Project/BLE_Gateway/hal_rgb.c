@@ -1,21 +1,40 @@
 #include "hal_rgb.h"
 #include "rgb_config.h"
 #include "string.h"
+#include "stdlib.h"
 
 typedef enum{
     TRUE  =  1,
     FALSE = 0,
 }BOOL;
 
-#define PWM_FREQ_MS 		5
-#define MIN_TIME_MS 		10
-#define TIME_BASE_MS    10
+#define PWM_FREQ_MS 		            5
+#define MIN_TIME_MS 		            10
+#define TIME_BASE_MS                    10
 
-#define PATTERN_START_INDX   0
-#define PATTERN_LEN_INDX     1
-#define PATTERN_SPEED_INDX   2
-#define PATTERN_MODE_INDX    3
-#define PATTERN_DATA_INDX    4
+#define PATTERN_START_INDX              0
+#define PATTERN_START_INDX_LEN          1
+#define PATTERN_LEN_INDX                (PATTERN_START_INDX  + PATTERN_START_INDX_LEN)
+#define PATTERN_LEN_INDX_LEN            1
+#define PATTERN_SPEED_INDX              (PATTERN_LEN_INDX+PATTERN_LEN_INDX_LEN)
+#define PATTERN_SPEED_INDX_LEN          1
+#define PATTERN_MODE_INDX               (PATTERN_SPEED_INDX + PATTERN_SPEED_INDX_LEN)
+#define PATTERN_MODE_INDX_LEN           1
+#define PATTERN_DATA_INDX               (PATTERN_MODE_INDX + PATTERN_MODE_INDX_LEN)
+#define PATTERN_DATA_EACH_LEN                1
+
+#define PATTERN_RAW_START_INDX          0
+#define PATTERN_RAW_START_INDX_LEN      1
+#define PATTERN_RAW_LEN_INDX            (PATTERN_RAW_START_INDX + PATTERN_RAW_START_INDX_LEN)
+#define PATTERN_RAW_LEN_INDX_LEN        2
+#define PATTERN_RAW_SPEED_INDX          (PATTERN_RAW_LEN_INDX + PATTERN_RAW_LEN_INDX_LEN)
+#define PATTERN_RAW_SPEED_INDX_LEN      2
+#define PATTERN_RAW_MODE_INDX           (PATTERN_RAW_SPEED_INDX + PATTERN_RAW_SPEED_INDX_LEN)
+#define PATTERN_RAW_MODE_INDX_LEN       (2)
+#define PATTERN_RAW_DATA_INDX           (PATTERN_RAW_MODE_INDX + PATTERN_RAW_MODE_INDX_LEN)
+#define PATTERN_RAW_DATA_INDX_EACH_LEN  2
+
+
 
 #define PATTERN_START_VAL   'S'
 
@@ -141,7 +160,7 @@ void fill_dimming_pattern(unsigned char speed, unsigned char* pValue, unsigned c
 
 void fill_continuous_pattern(unsigned char speed, unsigned char* pValue, unsigned char lenVal)
 {
-    unsigned char i = 0, j =0;
+    unsigned char i = 0;
     unsigned char len = 0;
     
     //Reset pattern
@@ -238,7 +257,6 @@ BOOL hal_null_node(RGB_NODE* pNode){
 }
 void HAL_RGB_Run_Node(RGB_NODE node)
 {
-    int timeEachStep = 0;
     int minTime = 0;
 
 		if(hal_null_node(&node)) return;
@@ -320,24 +338,110 @@ BOOL hal_previous_node_finished(){
     Pattern format : S/xx/yy/zz/rrggbb/rrggbb.....
     where : 
     - S : start pattern = 'S'
-    - xx: pattern len , 1 byte
+    - xx: pattern len , 1 byte.
     - yy: speed, 1 byte. Value : {0,1,2} = {Low , Medium , Fast}
     - zz: mode, 1 byte. Value : {0,1,2} = {Single, Dimming, Continuous}
     -rrggbb : color value, red green blue respectively.
 *****************************************************************/
+    
+/*****************************************************************
+        Raw data received : S/xx/yy/zz/rrggbb/rrggbb.....
+        where : 
+        - S : start pattern = 'S'
+        - xx: pattern len , 2 byte. In acii format
+        - yy: speed, 2 byte in ascii format. Value : {'00','01','02'} = {Low , Medium , Fast}
+        - zz: mode, 2 byte in ascii format . Value : {'00','01','02'} = {Single, Dimming, Continuous}
+        -rrggbb : color value, red green blue respectively. 6 byte for every color. In ascii format
+*****************************************************************/
+
 
 static unsigned char s_numOfNode = 0;
 static unsigned char s_curNode = 0;
 volatile RGB_NODE* s_pRunningPattern;
-unsigned char HAL_RGB_Setup_Pattern(void* pValue)
+volatile unsigned char* m_pPatternSetting = 0;
+
+unsigned int hal_convert_ascii_to_value(unsigned char* pAscii, unsigned char len)
+{
+    unsigned int value = 0;
+    unsigned char i = 0;
+    unsigned char tmp = 0;
+
+    for(i = 0; i < len; i++)
+    {
+        value = value << 1;
+        tmp = *(pAscii+i);
+        if(tmp >='0' && tmp <='9')
+        {
+            value += tmp;
+        }
+        else if((tmp >= 'A') && (tmp <= 'F'))
+        {
+            value += (10 + tmp - 'A');
+        }
+        else if((tmp >= 'a') && (tmp <= 'f'))
+        {
+            value += (10 + tmp - 'a');
+        }    
+    }
+
+    return value;
+    
+}
+BOOL hal_rgb_retrieve_data(unsigned char* pRawValue)
+{
+    unsigned int tmp;
+    unsigned char* pTmp;
+    unsigned int len = 0;
+    
+    /*calculate the len of pattern*/
+    pTmp  = &pRawValue[PATTERN_RAW_LEN_INDX];
+    tmp = hal_convert_ascii_to_value(pTmp,PATTERN_RAW_LEN_INDX_LEN);
+
+    if(tmp == 0) return FALSE;
+    tmp -= ((PATTERN_RAW_START_INDX_LEN) + PATTERN_RAW_LEN_INDX_LEN +
+            (PATTERN_RAW_MODE_INDX_LEN + PATTERN_RAW_SPEED_INDX_LEN));
+    tmp /= (PATTERN_RAW_DATA_INDX_EACH_LEN);
+
+    tmp *= PATTERN_DATA_EACH_LEN;
+    tmp += ((PATTERN_START_INDX_LEN) + PATTERN_LEN_INDX_LEN +
+            (PATTERN_MODE_INDX_LEN + PATTERN_SPEED_INDX_LEN));
+    len = tmp;
+             
+    if(m_pPatternSetting != 0) free(m_pPatternSetting);
+    m_pPatternSetting = (unsigned char*)malloc(len);
+
+    /*Retrieve start pattern*/
+    m_pPatternSetting[PATTERN_START_INDX] = pRawValue[PATTERN_START_INDX];
+
+    /*Retrive len*/
+    m_pPatternSetting[PATTERN_LEN_INDX] = len;
+
+    /*Retrieve speed*/
+    m_pPatternSetting[PATTERN_SPEED_INDX] = 
+        hal_convert_ascii_to_value(&pRawValue[PATTERN_RAW_SPEED_INDX],PATTERN_RAW_SPEED_INDX_LEN);
+    /*Retrive mode*/
+    m_pPatternSetting[PATTERN_MODE_INDX] = 
+        hal_convert_ascii_to_value(&pRawValue[PATTERN_RAW_MODE_INDX],PATTERN_RAW_MODE_INDX_LEN);
+    /*Retrieve data*/
+    len = len - (PATTERN_START_INDX_LEN + PATTERN_LEN_INDX_LEN + 
+                 PATTERN_MODE_INDX_LEN + PATTERN_SPEED_INDX_LEN);
+    for(tmp = 0 ; tmp < len ; tmp++)
+    {
+        m_pPatternSetting[PATTERN_DATA_INDX + tmp] = hal_convert_ascii_to_value(&pRawValue[PATTERN_RAW_DATA_INDX + tmp],PATTERN_RAW_DATA_INDX_EACH_LEN);
+    }
+
+    return TRUE;
+
+}
+unsigned char HAL_RGB_Setup_Pattern(void* pRawValue)
 {
     unsigned char* pPattern;
     unsigned char len;
     unsigned char speed = 0;
     unsigned char mode = 0;
-    unsigned char i;
-    
-    pPattern = (unsigned char*)pValue;
+
+    if(hal_rgb_retrieve_data((unsigned char*)pRawValue) == FALSE)
+        return FALSE;  
     
     /*Is this start of RGB Pattern*/
     if(pPattern[PATTERN_START_INDX] == PATTERN_START_VAL)
