@@ -242,7 +242,7 @@ int main(void){
 		
 		HAL_RGB_Init();
 		HAL_RGB_Setup_Pattern(m_default_pattern);
-		RGB_NODE node = {255,0,0,1000,2000};
+		
 		//HAL_RGB_Run_Node(node);
 		while(true)
 		{

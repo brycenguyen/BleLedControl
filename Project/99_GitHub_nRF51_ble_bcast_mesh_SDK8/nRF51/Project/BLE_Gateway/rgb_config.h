@@ -7,7 +7,7 @@ typedef enum{
 
 void BSP_Init_GPIO();
 void BSP_Init_PWM(unsigned int ms);
-void BSP_Set_Led_Brightness(RGB_LED led, unsigned char brightness); 
+void BSP_Set_Led_Brightness(RGB_LED led, int brightness); 
 void BSP_Set_Time_ToUpdate(unsigned int ms);
 void BSP_Init_Timer();
 unsigned char BSP_RGB_Is_Updated();

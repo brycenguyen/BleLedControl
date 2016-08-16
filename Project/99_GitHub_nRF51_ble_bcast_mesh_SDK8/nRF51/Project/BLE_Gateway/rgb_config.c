@@ -69,8 +69,10 @@ void BSP_Init_PWM(unsigned int ms)
 
 
 /*Set duty cycle for individual led.*/
-void BSP_Set_Led_Brightness(RGB_LED led, unsigned char brightness)
+void BSP_Set_Led_Brightness(RGB_LED led, int brightness)
 {
+		if(brightness <=0) brightness = 0;
+		if(brightness >= 255) brightness = 255;
     switch(led)
     {
         case RGB_LED_RED :   

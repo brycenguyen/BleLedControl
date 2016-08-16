@@ -368,11 +368,11 @@ unsigned int hal_convert_ascii_to_value(unsigned char* pAscii, unsigned char len
 
     for(i = 0; i < len; i++)
     {
-        value = value << 1;
+        value = value << 4;
         tmp = *(pAscii+i);
         if(tmp >='0' && tmp <='9')
         {
-            value += tmp;
+            value += (tmp - '0');
         }
         else if((tmp >= 'A') && (tmp <= 'F'))
         {
@@ -427,7 +427,8 @@ BOOL hal_rgb_retrieve_data(unsigned char* pRawValue)
                  PATTERN_MODE_INDX_LEN + PATTERN_SPEED_INDX_LEN);
     for(tmp = 0 ; tmp < len ; tmp++)
     {
-        m_pPatternSetting[PATTERN_DATA_INDX + tmp] = hal_convert_ascii_to_value(&pRawValue[PATTERN_RAW_DATA_INDX + tmp],PATTERN_RAW_DATA_INDX_EACH_LEN);
+        m_pPatternSetting[PATTERN_DATA_INDX + tmp] = hal_convert_ascii_to_value(&pRawValue[PATTERN_RAW_DATA_INDX + tmp*PATTERN_RAW_DATA_INDX_EACH_LEN],
+																																								PATTERN_RAW_DATA_INDX_EACH_LEN);
     }
 
     return TRUE;
@@ -435,7 +436,7 @@ BOOL hal_rgb_retrieve_data(unsigned char* pRawValue)
 }
 unsigned char HAL_RGB_Setup_Pattern(void* pRawValue)
 {
-    unsigned char* pPattern;
+    //unsigned char* pPattern;
     unsigned char len;
     unsigned char speed = 0;
     unsigned char mode = 0;
@@ -444,27 +445,27 @@ unsigned char HAL_RGB_Setup_Pattern(void* pRawValue)
         return FALSE;  
     
     /*Is this start of RGB Pattern*/
-    if(pPattern[PATTERN_START_INDX] == PATTERN_START_VAL)
+    if(m_pPatternSetting[PATTERN_START_INDX] == PATTERN_START_VAL)
     {   
-        len = pPattern[PATTERN_LEN_INDX] - 4;
+        len = m_pPatternSetting[PATTERN_LEN_INDX] - 4;
         len = len / 3;
-        speed = pPattern[PATTERN_SPEED_INDX];
-        mode = pPattern[PATTERN_MODE_INDX];
+        speed = m_pPatternSetting[PATTERN_SPEED_INDX];
+        mode = m_pPatternSetting[PATTERN_MODE_INDX];
         switch(mode)
         {
             case 0:
-                fill_single_pattern(speed,&pPattern[PATTERN_DATA_INDX],len);
+                fill_single_pattern(speed,&m_pPatternSetting[PATTERN_DATA_INDX],len);
                 s_numOfNode = sizeof(pattern_single_arr)/sizeof(RGB_NODE);
                 s_pRunningPattern = pattern_single_arr;
                 break;
             case 1:
-                fill_dimming_pattern(speed,&pPattern[PATTERN_DATA_INDX],len);
+                fill_dimming_pattern(speed,&m_pPatternSetting[PATTERN_DATA_INDX],len);
                 s_numOfNode = sizeof(pattern_dimming_arr)/sizeof(RGB_NODE);
                 s_pRunningPattern = pattern_dimming_arr;
                 break;
             case 2 :
             default :
-                fill_continuous_pattern(speed,&pPattern[PATTERN_DATA_INDX],len);
+                fill_continuous_pattern(speed,&m_pPatternSetting[PATTERN_DATA_INDX],len);
                 s_numOfNode = sizeof(pattern_continuous_arr)/sizeof(RGB_NODE);
                 s_pRunningPattern = pattern_continuous_arr;
                 break;
